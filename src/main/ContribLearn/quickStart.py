@@ -63,7 +63,7 @@ def main():
   classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,
                                               hidden_units=[10, 20, 10],
                                               n_classes=3,
-                                              model_dir="/tmp/iris_model")
+                                              model_dir="iris_data/tmp/iris_model")
   # Define the training inputs
   def get_train_inputs():
     x = tf.constant(training_set.data)
@@ -82,10 +82,14 @@ def main():
     return x, y
 
   # Evaluate accuracy.
-  accuracy_score = classifier.evaluate(input_fn=get_test_inputs,
-                                       steps=1)["accuracy"]
+  ev = classifier.evaluate(input_fn=get_test_inputs, steps=1)
+  accuracy_score = ev["accuracy"]
+  loss_score = ev['loss']
+  global_step = ev['global_step']
 
   print("\nTest Accuracy: {0:f}\n".format(accuracy_score))
+  print("\nTest Loss: {0:f}\n".format(loss_score))
+  print("\nGlobal Steps: {0:d}\n".format(global_step))
 
   # Classify two new flower samples.
   def new_samples():
