@@ -2,16 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-TensorFlow’s high-level machine learning API (tf.contrib.learn) makes it easy to configure, train, and evaluate a variety of machine learning models.
-In this tutorial, you’ll use tf.contrib.learn to construct a neural network classifier and train it on the Iris data set to predict flower species based on sepal/petal geometry.
-
-You'll write code to perform the following five steps:
-
-1. Load CSVs containing Iris training/test data into a TensorFlow Dataset
-2. Construct a neural network classifier
-3. Fit the model using the training data
-4. Evaluate the accuracy of the model
-5. Classify new samples
+When training a model, it’s often valuable to track and evaluate progress in real time.
+In this tutorial, you’ll learn how to use TensorFlow’s logging capabilities and
+the Monitor API to audit the in-progress training of a neural network classifier for categorizing irises.
+This tutorial builds on the code developed in tf.contrib.learn Quickstart
 """
 
 from __future__ import absolute_import
@@ -23,6 +17,8 @@ import urllib.request
 
 import numpy as np
 import tensorflow as tf
+
+tf.logging.set_verbosity(tf.logging.INFO)  # DEBUG, INFO, WARN, ERROR, and FATAL
 
 # Data sets
 IRIS_TRAINING = "iris_data//iris_training.csv"
@@ -56,6 +52,30 @@ def main():
       target_dtype=np.int,
       features_dtype=np.float32)
 
+  validation_metrics = {
+      "accuracy":
+          tf.contrib.learn.MetricSpec(
+              metric_fn=tf.contrib.metrics.streaming_accuracy,
+              prediction_key=tf.contrib.learn.PredictionKey.CLASSES),
+      "precision":
+          tf.contrib.learn.MetricSpec(
+              metric_fn=tf.contrib.metrics.streaming_precision,
+              prediction_key=tf.contrib.learn.PredictionKey.CLASSES),
+      "recall":
+          tf.contrib.learn.MetricSpec(
+              metric_fn=tf.contrib.metrics.streaming_recall,
+              prediction_key=tf.contrib.learn.PredictionKey.CLASSES)
+  }
+
+  validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
+      test_set.data,
+      test_set.target,
+      every_n_steps=50,
+      metrics=validation_metrics,
+      early_stopping_metric='loss',
+      early_stopping_metric_minimize=True,
+      early_stopping_rounds=200)
+
   # Specify that all features have real-value data
   feature_columns = [tf.contrib.layers.real_valued_column("", dimension=4)]
 
@@ -63,22 +83,23 @@ def main():
   classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,
                                               hidden_units=[10, 20, 10],
                                               n_classes=3,
-                                              model_dir="iris_data/tmp/iris_model")
+                                              model_dir="iris_data/tmp/iris_model",
+                                              config=tf.contrib.learn.RunConfig(save_checkpoints_secs=1))
   # Define the training inputs
   def get_train_inputs():
     x = tf.constant(training_set.data)
     y = tf.constant(training_set.target)
-
     return x, y
 
   # Fit model.
-  classifier.fit(input_fn=get_train_inputs, steps=2000)
+  classifier.fit(input_fn=get_train_inputs,
+                 steps=300,
+                 monitors=[validation_monitor])
 
   # Define the test inputs
   def get_test_inputs():
     x = tf.constant(test_set.data)
     y = tf.constant(test_set.target)
-
     return x, y
 
   # Evaluate accuracy.
