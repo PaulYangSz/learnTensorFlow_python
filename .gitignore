@@ -99,4 +99,4 @@ ENV/
 
 # mypy
 .mypy_cache/
-src/main/ContribLearn/*/tmp/
+src/main/GettingStarted/estimator/*/tmp/

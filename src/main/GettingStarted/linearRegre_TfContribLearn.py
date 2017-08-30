@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# 这是老的r1.2版本的API，使用contrib.learn，r1.3版本的API改为estimator
 """
 tf.contrib.learn is a high-level TensorFlow library that simplifies the mechanics of machine learning
 """
