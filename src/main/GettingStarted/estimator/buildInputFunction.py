@@ -12,26 +12,11 @@ from __future__ import print_function
 
 import itertools
 
-import functools
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 
 tf.logging.set_verbosity(tf.logging.INFO)
-
-"""
-def my_input_fn():
-
-    # Preprocess your data here...
-
-    # ...then return 1) a mapping of feature columns to Tensors with
-    # the corresponding feature data, and 2) a Tensor containing labels
-    return feature_cols, labels
-
-feature_cols
-    A dict containing key/value pairs that map feature column names to Tensors (or SparseTensors) containing the corresponding feature data.
-labels
-    A Tensor containing your label (target) values: the values your model aims to predict.
-"""
 
 COLUMNS = ["crim", "zn", "indus", "nox", "rm", "age",
            "dis", "tax", "ptratio", "medv"]
@@ -40,46 +25,54 @@ FEATURES = ["crim", "zn", "indus", "nox", "rm",
 LABEL = "medv"
 
 
-def input_fn(data_set):
-  feature_cols = {k: tf.constant(data_set[k].values) for k in FEATURES}
-  labels = tf.constant(data_set[LABEL].values)
-  return feature_cols, labels
+def get_input_fn(data_set, num_epochs=None, shuffle=True):
+    return tf.estimator.inputs.pandas_input_fn(
+        x=pd.DataFrame({k: data_set[k].values for k in FEATURES}),  # 写成data_set[FEATURES]也OK
+        y=pd.Series(data_set[LABEL].values),
+        num_epochs=num_epochs,
+        shuffle=shuffle)
 
 
 def main(unused_argv):
-  # Load datasets
-  training_set = pd.read_csv("boston_data//boston_train.csv", skipinitialspace=True,
-                             skiprows=1, names=COLUMNS)
-  test_set = pd.read_csv("boston_data//boston_test.csv", skipinitialspace=True,
-                         skiprows=1, names=COLUMNS)
-
-  # Set of 6 examples for which to predict median house values
-  prediction_set = pd.read_csv("boston_data//boston_predict.csv", skipinitialspace=True,
+    # Load datasets
+    training_set = pd.read_csv("boston_data/boston_train.csv", skipinitialspace=True,
                                skiprows=1, names=COLUMNS)
+    test_set = pd.read_csv("boston_data/boston_test.csv", skipinitialspace=True,
+                           skiprows=1, names=COLUMNS)
 
-  # Feature cols
-  feature_cols = [tf.contrib.layers.real_valued_column(k)
-                  for k in FEATURES]
+    # Set of 6 examples for which to predict median house values
+    prediction_set = pd.read_csv("boston_data/boston_predict.csv", skipinitialspace=True,
+                                 skiprows=1, names=COLUMNS)
 
-  # Build 2 layer fully connected DNN with 10, 10 units respectively.
-  regressor = tf.contrib.learn.DNNRegressor(feature_columns=feature_cols,
-                                            hidden_units=[10, 10],
-                                            model_dir="boston_data//tmp//boston_model")
+    # Feature cols
+    feature_cols = [tf.feature_column.numeric_column(k) for k in FEATURES]
 
-  # Fit
-  regressor.fit(input_fn=lambda: input_fn(training_set), steps=5000)
-  # regressor.fit(input_fn=functools.partial(input_fn, data_set=training_set), steps=5000)
+    # Build 2 layer fully connected DNN with 10, 10 units respectively.
+    regressor = tf.estimator.DNNRegressor(feature_columns=feature_cols,
+                                          hidden_units=[10, 10],
+                                          model_dir="boston_data/tmp/boston_model")
 
-  # Score accuracy
-  ev = regressor.evaluate(input_fn=lambda: input_fn(test_set), steps=1)
-  loss_score = ev["loss"]
-  print("Loss: {0:f}".format(loss_score))
+    # Train
+    regressor.train(input_fn=get_input_fn(training_set), steps=500)
 
-  # Print out predictions
-  y = regressor.predict(input_fn=lambda: input_fn(prediction_set))
-  # .predict() returns an iterator; convert to a list and print predictions
-  predictions = list(itertools.islice(y, 6))
-  print("Predictions: {}".format(str(predictions)))
+    # Evaluate loss over one epoch of test_set.
+    ev = regressor.evaluate(
+        input_fn=get_input_fn(test_set, num_epochs=1, shuffle=False))
+    print('evaluate result.key={}'.format(ev.keys()))
+    print('ev={}'.format(ev))
+    loss_score = ev["loss"]
+    print("Loss: {0:f}".format(loss_score))
+
+    # Print out predictions over a slice of prediction_set.
+    y = regressor.predict(
+        input_fn=get_input_fn(prediction_set, num_epochs=1, shuffle=False))
+    # .predict() returns an iterator of dicts; convert to a list and print
+    # predictions
+    print("Type of regressor.predict's return: {}".format(type(y)))
+    predictions = np.array(list(p["predictions"] for p in itertools.islice(y, 6)))
+    print("Predictions: {}".format(str(predictions)))
+    print("predictions.shape={}".format(predictions.shape))
+
 
 if __name__ == "__main__":
-  tf.app.run()
+    tf.app.run()

@@ -49,10 +49,10 @@ def deepnn(x):
   # Reshape to use within a convolutional neural net.
   # Last dimension is for "features" - there is only one here, since images are
   # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
-  x_image = tf.reshape(x, [-1, 28, 28, 1])
+  x_image = tf.reshape(x, [-1, 28, 28, 1])  # 把数据从784转成28*28
 
   # First convolutional layer - maps one grayscale image to 32 feature maps.
-  W_conv1 = weight_variable([5, 5, 1, 32])
+  W_conv1 = weight_variable([5, 5, 1, 32])  # 第一层卷积，patch大小为5*5，输入特征是1维输出特征为32维
   b_conv1 = bias_variable([32])
   h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
@@ -60,7 +60,7 @@ def deepnn(x):
   h_pool1 = max_pool_2x2(h_conv1)
 
   # Second convolutional layer -- maps 32 feature maps to 64.
-  W_conv2 = weight_variable([5, 5, 32, 64])
+  W_conv2 = weight_variable([5, 5, 32, 64])  # 第二层卷积，patch大小为5*5，输入特征是32维输出特征为64维
   b_conv2 = bias_variable([64])
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
@@ -69,7 +69,7 @@ def deepnn(x):
 
   # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
   # is down to 7x7x64 feature maps -- maps this to 1024 features.
-  W_fc1 = weight_variable([7 * 7 * 64, 1024])
+  W_fc1 = weight_variable([7 * 7 * 64, 1024])  # 全连接层：现在图片描述为7*7大小的64个，不用卷积，直接matmul成-1*1024的矩阵
   b_fc1 = bias_variable([1024])
 
   h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
@@ -78,10 +78,10 @@ def deepnn(x):
   # Dropout - controls the complexity of the model, prevents co-adaptation of
   # features.
   keep_prob = tf.placeholder(tf.float32)
-  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)  # 以keep_prob的概率进行dropout
 
   # Map the 1024 features to 10 classes, one for each digit
-  W_fc2 = weight_variable([1024, 10])
+  W_fc2 = weight_variable([1024, 10])  # 最终得到10维输出结果
   b_fc2 = bias_variable([10])
 
   y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
@@ -126,7 +126,7 @@ def main(_):
 
   cross_entropy = tf.reduce_mean(
       tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
-  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)  # 使用AdamOptimizer进行参数优化
   correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -138,7 +138,7 @@ def main(_):
         train_accuracy = accuracy.eval(feed_dict={
             x: batch[0], y_: batch[1], keep_prob: 1.0})
         print('step %d, training accuracy %g' % (i, train_accuracy))
-      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})  # 需要输入keep_prob的值，根据各个节点所需的placeholder的依赖关系，进行输入.
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
