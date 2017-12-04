@@ -34,8 +34,8 @@ batch_size = 128
 display_step = 200
 
 # Network Parameters
-num_input = 56  # MNIST data input (img shape: 28*28)
-timesteps = 14  # timesteps
+num_input = 56  # MNIST data input (img shape: 28*28) 本来是28，为了方便查看修改为56
+timesteps = 14  # timesteps 本来是28，为了方便查看修改为14
 num_hidden = 128  # hidden layer num of features
 num_classes = 10  # MNIST total classes (0-9 digits)
 
@@ -64,14 +64,18 @@ def RNN(x, weights, biases):
     #    `value[:, i, :, :]` and each tensor in `output` will have shape `(A, C, D)`.
     # x的类型是list，长度是timesteps, list中的每个元素大小为[batch_size, num_input]
     x = tf.unstack(x, timesteps, axis=1)
-    print(tf.Print(x, [x]))
+    print("x's type: {}".format(type(x)))  # <class 'list'>
+    print("after tf.unstack x: {}".format(tf.Print(x, [x])))  # Tensor("Print:0", shape=(14, ?, 56), dtype=float32)
+    print("x[0]: {}".format(tf.Print(x[0], [x[0]])))  # Tensor("Print_1:0", shape=(?, 56), dtype=float32)
 
     # Define a LSTM cell with tensorflow
     lstm_cell = rnn.BasicLSTMCell(num_units=num_hidden, forget_bias=1.0)
 
     # Get lstm cell output
     outputs, states = rnn.static_rnn(cell=lstm_cell, inputs=x, dtype=tf.float32)
-    print(tf.Print(outputs, [outputs]))
+    print("outputs's type: {}".format(type(outputs)))  # <class 'list'>
+    print("outputs: {}".format(tf.Print(outputs, [outputs])))  # Tensor("Print_2:0", shape=(14, ?, 128), dtype=float32)
+    print("outputs[0]: {}".format(tf.Print(outputs[0], [outputs[0]])))  # Tensor("Print_3:0", shape=(?, 128), dtype=float32)
 
     # Linear activation, using rnn inner loop last output
     return tf.matmul(a=outputs[-1], b=weights['out']) + biases['out']
@@ -104,7 +108,7 @@ with tf.Session() as sess:
         # Run train_op
         sess.run(train_op, feed_dict={X: batch_x, Y: batch_y})
         if step % display_step == 0 or step == 1:
-            print(tf.Print(batch_x, [batch_x]))
+            print("batch_x: {}".format(tf.Print(batch_x, [batch_x])))
             # Calculate the batch loss and accuracy
             loss, acc = sess.run([loss_op, accuracy], feed_dict={X: batch_x, Y: batch_y})
             print("Step {}, Minibatch Loss = {:.4f}, Training Accuracy = {:.3f}".format(step, loss, acc))
