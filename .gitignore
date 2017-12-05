@@ -101,3 +101,4 @@ ENV/
 .mypy_cache/
 src/main/GettingStarted/estimator/*/tmp/
 src/TF-Examples/NeuralNetworks/simple_nn_high/
+src/TF-Examples/NeuralNetworks/cnn_high/
