@@ -1,6 +1,6 @@
 """ Neural Network.
 
-Use high-level API to build neural network.
+Use high-level API to build neural network. (Custom-made Estimator)
 
 A 2-Hidden Layers Fully Connected Neural Network (a.k.a Multilayer Perceptron)
 implementation with TensorFlow. This example is using the MNIST database
