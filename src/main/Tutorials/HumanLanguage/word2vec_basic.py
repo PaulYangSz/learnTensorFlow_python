@@ -71,12 +71,12 @@ vocabulary_size = 50000
 
 def build_dataset(words, n_words):
     """Process raw inputs into a dataset."""
-    count = [['UNK', -1]]
+    count = [['UNK', -1]]  # 统计单词和词频的二维列表：[[单词，词频], ... ,[单词，词频]]
     count.extend(collections.Counter(words).most_common(n_words - 1))
-    dictionary = dict()
+    dictionary = dict()  # 单词和对应的索引，不常出现的词（排名在49999之后的），统统索引为0，用'NUK'表示
     for word, _ in count:
         dictionary[word] = len(dictionary)
-    data = list()
+    data = list()  # 语料中的单词转成索引的列表
     unk_count = 0
     for word in words:
         index = dictionary.get(word, 0)
@@ -84,7 +84,7 @@ def build_dataset(words, n_words):
             unk_count += 1
         data.append(index)
     count[0][1] = unk_count
-    reversed_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
+    reversed_dictionary = dict(zip(dictionary.values(), dictionary.keys()))  # 索引->单词
     return data, count, dictionary, reversed_dictionary
 
 
@@ -110,23 +110,23 @@ def generate_batch(batch_size, num_skips, skip_window):
     assert num_skips <= 2 * skip_window
     batch = np.ndarray(shape=(batch_size), dtype=np.int32)
     labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
-    span = 2 * skip_window + 1  # [ skip_window target skip_window ]
-    buffer = collections.deque(maxlen=span)
+    span = 2 * skip_window + 1  # [ skip_window target skip_window ] 前后skip窗长加上中心词自己后的个数
+    buffer = collections.deque(maxlen=span)  # 双端队列，并设置最大长度
     if data_index + span > len(data):
         data_index = 0
-    buffer.extend(data[data_index:data_index + span])
+    buffer.extend(data[data_index:data_index + span])  # 接续上次读入的位置，读入span长度的文本内容
     data_index += span
-    for i in range(batch_size // num_skips):
-        context_words = [w for w in range(span) if w != skip_window]
-        words_to_use = random.sample(context_words, num_skips)
+    for i in range(batch_size // num_skips):  # 分块总共采样batch_size个，其中每块随机选取上下文的词num_skips次，每一块的中心词固定
+        context_words = [w for w in range(span) if w != skip_window]  # 得到不包含中心词的位置索引[0,1,3,4],假如skip窗长为2
+        words_to_use = random.sample(context_words, num_skips)  # 得到随机选取的作为上下文的词的位置
         for j, context_word in enumerate(words_to_use):
-            batch[i * num_skips + j] = buffer[skip_window]
-            labels[i * num_skips + j, 0] = buffer[context_word]
+            batch[i * num_skips + j] = buffer[skip_window]  # 中心词
+            labels[i * num_skips + j, 0] = buffer[context_word]  # 上下文词
         if data_index == len(data):
             buffer[:] = data[:span]
             data_index = span
         else:
-            buffer.append(data[data_index])
+            buffer.append(data[data_index])  # 继续向后读入一个词，相当于读取下一块，中心词也向后偏移一个
             data_index += 1
     # Backtrack a little bit to avoid skipping words in the end of a batch
     data_index = (data_index + len(data) - span) % len(data)
