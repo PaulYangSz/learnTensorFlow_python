@@ -152,7 +152,7 @@ num_sampled = 64  # Number of negative examples to sample.
 # displaying model accuracy, they don't affect calculation.
 valid_size = 16  # Random set of words to evaluate similarity on.
 valid_window = 100  # Only pick dev samples in the head of the distribution.
-valid_examples = np.random.choice(valid_window, valid_size, replace=False)
+valid_examples = np.random.choice(valid_window, valid_size, replace=False)  # range(100)内取16个随机数
 
 graph = tf.Graph()
 
@@ -229,7 +229,7 @@ with tf.Session(graph=graph) as session:
 
         # Note that this is expensive (~20% slowdown if computed every 500 steps)
         if step % 10000 == 0:
-            sim = similarity.eval()
+            sim = similarity.eval()  # 相当于sess.run(similarity)
             for i in xrange(valid_size):
                 valid_word = reverse_dictionary[valid_examples[i]]
                 top_k = 8  # number of nearest neighbors
@@ -239,7 +239,7 @@ with tf.Session(graph=graph) as session:
                     close_word = reverse_dictionary[nearest[k]]
                     log_str = '%s %s,' % (log_str, close_word)
                 print(log_str)
-    final_embeddings = normalized_embeddings.eval()
+    final_embeddings = normalized_embeddings.eval()  # 相当于sess.run(normalized_embeddings)
 
 
 # Step 6: Visualize the embeddings.
