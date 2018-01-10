@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
+# 推荐阅读http://blog.csdn.net/u014595019/article/details/52759104来帮助理解
+
 """Example / benchmark for building a PTB LSTM model.
 
 Trains the model described in:

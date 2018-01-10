@@ -51,7 +51,7 @@ biases = {
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
 
-
+# 推荐阅读https://jasdeep06.github.io/posts/Understanding-LSTM-in-Tensorflow-MNIST/里面的输入构图更直观理解
 def RNN(x, weights, biases):
     # Prepare data shape to match `rnn` function requirements
     # Current data input shape: (batch_size, timesteps, n_input)
@@ -72,13 +72,14 @@ def RNN(x, weights, biases):
     lstm_cell = rnn.BasicLSTMCell(num_units=num_hidden, forget_bias=1.0)
 
     # Get lstm cell output
-    outputs, states = rnn.static_rnn(cell=lstm_cell, inputs=x, dtype=tf.float32)
+    outputs, states = rnn.static_rnn(cell=lstm_cell, inputs=x, dtype=tf.float32)  # outputs是对应每个时序的输出，为长度=timesteps的shape=[batch_size, num_hidden]的Tensor list
+                                                                                  # states是对应LSTM的cell状态, 在GRU中states与outputs的最后一个相等
     print("outputs's type: {}".format(type(outputs)))  # <class 'list'>
     print("outputs: {}".format(tf.Print(outputs, [outputs])))  # Tensor("Print_2:0", shape=(14, ?, 128), dtype=float32)
     print("outputs[0]: {}".format(tf.Print(outputs[0], [outputs[0]])))  # Tensor("Print_3:0", shape=(?, 128), dtype=float32)
 
     # Linear activation, using rnn inner loop last output
-    return tf.matmul(a=outputs[-1], b=weights['out']) + biases['out']
+    return tf.matmul(a=outputs[-1], b=weights['out']) + biases['out']  # 注意！只使用outputs最后一个的time step的输出
 
 
 logits = RNN(X, weights, biases)
